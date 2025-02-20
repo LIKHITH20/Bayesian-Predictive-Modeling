@@ -1,0 +1,40 @@
+
+data {
+  for ( j in 1:Nx ) {
+    xm[j]  <- mean(x[,j])
+    xsd[j] <-   sd(x[,j])
+    for ( i in 1:Ntotal ) {
+      zx[i,j] <- ( x[i,j] - xm[j] ) / xsd[j]
+    }
+  } 
+}
+
+model {
+  for ( i in 1:Ntotal ) {
+     # In JAGS, ilogit is logistic:
+    y[i] ~ dbern( ilogit( zbeta0 + sum( zbeta[1:Nx] * zx[i,1:Nx] ) ) )
+  }
+  # Priors vague on standardized scale:
+  zbeta0 ~ dnorm( 0 , 1/2^2 )
+  
+  zbeta[1] ~ dnorm( 0 , 1/2^2 )
+  zbeta[2] ~ dnorm( 0 , 1/2^2 )
+  zbeta[3] ~ dnorm( 0 , 1/2^2 )
+  zbeta[4] ~ dnorm(0, 1/2^2)
+  zbeta[5] ~ dnorm(0, 1/2^2)
+  zbeta[6] ~ dnorm((240 - xm[6])/xsd[6], 1/0.001^2) 
+  zbeta[7] ~ dnorm((140 - xm[7]) / xsd[7], 1/0.001^2)
+  zbeta[8] ~ dnorm((90 - xm[8]) / xsd[8], 1/0.001^2)
+  zbeta[9] ~ dnorm(0, 1/2^2)
+  zbeta[10] ~ dnorm(0, 1/2^2)
+  
+  # Transform to original scale:
+  beta[1:Nx] <- zbeta[1:Nx] / xsd[1:Nx]
+  beta0 <- zbeta0 - sum( zbeta[1:Nx] * xm[1:Nx] / xsd[1:Nx] )
+
+  # Compute predictions at every step of the MCMC
+  for ( k in 1:Npred){
+    pred[k] <- ilogit(beta0 + beta[1] * xPred[k,1] + beta[2] * xPred[k,2] + beta[3] * xPred[k,3] + beta[4] * xPred[k,4] + beta[5] * xPred[k,5] + beta[6] * xPred[k,6] + beta[7] * xPred[k,7]+ beta[8] * xPred[k,8] + beta[9] * xPred[k,9] + beta[10] * xPred[k,10])
+  }
+}
+
